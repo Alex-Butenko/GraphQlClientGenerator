@@ -890,7 +890,7 @@ using Newtonsoft.Json.Linq;
             if (!UseCustomClassNameIfDefined(ref typeName))
                 typeName = NamingHelper.ToValidCSharpName(typeName);
 
-            var className = typeName + "QueryBuilder";
+            var className = typeName + "Builder";
             ValidateClassName(className);
 
             context.BeforeQueryBuilderGeneration(className);
@@ -969,7 +969,7 @@ using Newtonsoft.Json.Linq;
                             if (!UseCustomClassNameIfDefined(ref fieldTypeName))
                                 fieldTypeName = NamingHelper.ToValidCSharpName(fieldTypeName);
                             
-                            writer.Write($", QueryBuilderType = typeof({fieldTypeName}QueryBuilder)");
+                            writer.Write($", QueryBuilderType = typeof({fieldTypeName}Builder)");
                         }
                     }
 
@@ -1115,7 +1115,7 @@ using Newtonsoft.Json.Linq;
 
                     var builderParameterName = NamingHelper.LowerFirst(fieldTypeName);
                     writer.Write(indentation);
-                    writer.Write($"    public {className} {NamingHelper.ToValidCSharpName(csharpPropertyName)}{(isFragment ? "Fragment" : null)}({fieldTypeName}QueryBuilder {builderParameterName}QueryBuilder");
+                    writer.Write($"    public {className} {NamingHelper.ToValidCSharpName(csharpPropertyName)}{(isFragment ? "Fragment" : null)}({fieldTypeName}Builder {builderParameterName}Builder");
 
                     if (argumentDefinitions.Length > 0)
                     {
@@ -1146,7 +1146,7 @@ using Newtonsoft.Json.Linq;
                             }
 
                             writer.Write(builderParameterName);
-                            writer.Write("QueryBuilder");
+                            writer.Write("Builder");
 
                             if (argumentDefinitions.Length > 0)
                                 writer.Write(", args");
