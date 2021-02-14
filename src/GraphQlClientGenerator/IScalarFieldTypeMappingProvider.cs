@@ -31,7 +31,7 @@
         {
             valueType = (valueType as GraphQlFieldType)?.UnwrapIfNonNull() ?? valueType;
             if (valueType.Kind == GraphQlTypeKind.Enum)
-                return new ScalarFieldTypeDescription { NetTypeName = NamingHelper.ToPascalCase(valueType.Name) + "?" };
+                return new ScalarFieldTypeDescription { NetTypeName = NamingHelper.ToValidCSharpName(valueType.Name) + "?" };
 
             var dataType = valueType.Name == GraphQlTypeBase.GraphQlTypeScalarString ? "string" : "object";
             return new ScalarFieldTypeDescription { NetTypeName = GraphQlGenerator.AddQuestionMarkIfNullableReferencesEnabled(configuration, dataType) };

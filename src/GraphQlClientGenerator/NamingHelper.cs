@@ -131,30 +131,5 @@ namespace GraphQlClientGenerator
 
             return String.Concat(pascalCase);
         }
-
-        public static string ToCSharpEnumName(string name)
-        {
-            var builder = new StringBuilder();
-            var startNewWord = true;
-            var hasLowerLetters = false;
-            var hasUpperLetters = false;
-            foreach (var @char in name)
-            {
-                if (@char == '_')
-                {
-                    startNewWord = true;
-                    continue;
-                }
-
-                hasLowerLetters |= Char.IsLower(@char);
-                hasUpperLetters |= Char.IsUpper(@char);
-
-                builder.Append(startNewWord ? Char.ToUpper(@char) : Char.ToLower(@char));
-
-                startNewWord = Char.IsDigit(@char);
-            }
-
-            return hasLowerLetters && hasUpperLetters ? name : builder.ToString();
-        }
     }
 }

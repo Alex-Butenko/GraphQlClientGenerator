@@ -8,6 +8,11 @@ namespace GraphQlClientGenerator
         {
             var nextMustBeStartChar = true;
 
+            if (value.StartsWith("@"))
+            {
+                value = value.Substring(1);
+            }
+
             if (value.Length == 0)
                 return false;
 

@@ -184,7 +184,7 @@ using Newtonsoft.Json.Linq;
 
                 writer.Write(indentation);
                 writer.Write("    public const string ");
-                writer.Write(NamingHelper.ToPascalCase(inputObjectType.Name));
+                writer.Write(NamingHelper.ToValidCSharpName(inputObjectType.Name));
                 writer.Write(" = \"");
                 writer.Write(inputObjectType.Name);
                 writer.WriteLine("\";");
@@ -225,7 +225,7 @@ using Newtonsoft.Json.Linq;
             {
                 if (type.Kind == GraphQlTypeKind.InputObject)
                 {
-                    var netType = NamingHelper.ToPascalCase(type.Name);
+                    var netType = NamingHelper.ToValidCSharpName(type.Name);
                     WriteMappingEntry(netType, type.Name);
                 }
                 else
@@ -363,7 +363,7 @@ using Newtonsoft.Json.Linq;
                 FindAllReferencedObjectTypes(schema, inputObjectType, referencedObjectTypes);
                 GenerateDataClass(
                     context,
-                    NamingHelper.ToPascalCase(inputObjectType.Name),
+                    NamingHelper.ToValidCSharpName(inputObjectType.Name),
                     inputObjectType,
                     "IGraphQlInputObject",
                     () => GenerateInputDataClassBody(inputObjectType, inputObjectType.InputFields.Cast<IGraphQlMember>().ToArray(), context));
@@ -394,7 +394,7 @@ using Newtonsoft.Json.Linq;
                 var isInterface = complexType.Kind == GraphQlTypeKind.Interface;
                 var csharpTypeName = complexType.Name;
                 if (!UseCustomClassNameIfDefined(ref csharpTypeName))
-                    csharpTypeName = NamingHelper.ToPascalCase(csharpTypeName);
+                    csharpTypeName = NamingHelper.ToValidCSharpName(csharpTypeName);
 
                 void GenerateBody(bool isInterfaceMember)
                 {
@@ -446,7 +446,7 @@ using Newtonsoft.Json.Linq;
 
                     foreach (var @interface in complexType.Interfaces)
                     {
-                        var interfaceName = "I" + NamingHelper.ToPascalCase(@interface.Name);
+                        var interfaceName = NamingHelper.ToValidCSharpName(@interface.Name);
                         interfacesToImplement.Add(interfaceName);
 
                         foreach (var interfaceField in complexTypeDictionary[@interface.Name].Fields.Where(FilterDeprecatedFields))
@@ -465,7 +465,7 @@ using Newtonsoft.Json.Linq;
             context.AfterDataClassesGeneration();
         }
 
-        private static string GetBackingFieldName(string graphQlFieldName) => "_" + NamingHelper.LowerFirst(NamingHelper.ToPascalCase(graphQlFieldName));
+        private static string GetBackingFieldName(string graphQlFieldName) => "_" + graphQlFieldName;
 
         private static bool IsComplexType(GraphQlTypeKind graphQlTypeKind) =>
             graphQlTypeKind == GraphQlTypeKind.Object || graphQlTypeKind == GraphQlTypeKind.Interface || graphQlTypeKind == GraphQlTypeKind.Union;
@@ -571,9 +571,6 @@ using Newtonsoft.Json.Linq;
 
         private string GenerateFileMember(GenerationContext context, string memberType, string typeName, GraphQlType graphQlType, string baseTypeName, Action generateFileMemberBody)
         {
-            if (memberType == "interface")
-                typeName = "I" + typeName;
-
             ValidateClassName(typeName);
 
             context.BeforeDataClassGeneration(typeName);
@@ -695,7 +692,7 @@ using Newtonsoft.Json.Linq;
             WriteDataClassPropertyBodyDelegate writeBody,
             GenerationContext context)
         {
-            var propertyName = NamingHelper.ToPascalCase(member.Name);
+            var propertyName = NamingHelper.ToValidCSharpName(member.Name);
             var propertyTypeDescription = GetDataPropertyType(baseType, member);
             var propertyTypeName = propertyTypeDescription.NetTypeName;
 
@@ -787,11 +784,9 @@ using Newtonsoft.Json.Linq;
                 case GraphQlTypeKind.InputObject:
                     var fieldTypeName = fieldType.Name;
                     if (!UseCustomClassNameIfDefined(ref fieldTypeName))
-                        fieldTypeName = NamingHelper.ToPascalCase(fieldTypeName);
+                        fieldTypeName = NamingHelper.ToValidCSharpName(fieldTypeName);
 
                     var propertyType = fieldTypeName;
-                    if (fieldType.Kind == GraphQlTypeKind.Interface)
-                        propertyType = "I" + propertyType;
 
                     return ConvertToTypeDescription(AddQuestionMarkIfNullableReferencesEnabled(propertyType));
 
@@ -806,12 +801,12 @@ using Newtonsoft.Json.Linq;
 
                     var itemTypeName = unwrappedItemType.Name;
                     if (!UseCustomClassNameIfDefined(ref itemTypeName))
-                        itemTypeName = NamingHelper.ToPascalCase(itemTypeName);
+                        itemTypeName = NamingHelper.ToValidCSharpName(itemTypeName);
 
                     var netItemType =
                         IsUnknownObjectScalar(baseType, member.Name, itemType)
                             ? "object"
-                            : (unwrappedItemType.Kind == GraphQlTypeKind.Interface ? "I" : null) + itemTypeName;
+                            : itemTypeName;
 
                     var suggestedScalarNetType = ScalarToNetType(baseType, member.Name, itemType).NetTypeName.TrimEnd('?');
                     if (!String.Equals(suggestedScalarNetType, "object") && !String.Equals(suggestedScalarNetType, "object?") &&
@@ -893,7 +888,7 @@ using Newtonsoft.Json.Linq;
             var schema = context.Schema;
             var typeName = type.Name;
             if (!UseCustomClassNameIfDefined(ref typeName))
-                typeName = NamingHelper.ToPascalCase(typeName);
+                typeName = NamingHelper.ToValidCSharpName(typeName);
 
             var className = typeName + "QueryBuilder";
             ValidateClassName(className);
@@ -953,7 +948,7 @@ using Newtonsoft.Json.Linq;
                     writer.Write(field.Name);
                     writer.Write('"');
 
-                    var csharpPropertyName = NamingHelper.ToPascalCase(field.Name);
+                    var csharpPropertyName = NamingHelper.ToValidCSharpName(field.Name);
                     if (_configuration.JsonPropertyGeneration == JsonPropertyGenerationOption.UseDefaultAlias && !String.Equals(field.Name, csharpPropertyName, StringComparison.OrdinalIgnoreCase))
                     {
                         writer.Write(", DefaultAlias = \"");
@@ -978,7 +973,7 @@ using Newtonsoft.Json.Linq;
                                 throw FieldTypeResolutionFailedException(type.Name, field.Name, null);
 
                             if (!UseCustomClassNameIfDefined(ref fieldTypeName))
-                                fieldTypeName = NamingHelper.ToPascalCase(fieldTypeName);
+                                fieldTypeName = NamingHelper.ToValidCSharpName(fieldTypeName);
                             
                             writer.Write($", QueryBuilderType = typeof({fieldTypeName}QueryBuilder)");
                         }
@@ -1082,7 +1077,7 @@ using Newtonsoft.Json.Linq;
 
                 var requiresFullBody = useCompatibleSyntax || argumentDefinitions.Any();
                 var returnPrefix = ReturnPrefix(requiresFullBody);
-                var csharpPropertyName = NamingHelper.ToPascalCase(field.Name);
+                var csharpPropertyName = NamingHelper.ToValidCSharpName(field.Name);
 
                 void WriteAliasParameter()
                 {
@@ -1145,7 +1140,7 @@ using Newtonsoft.Json.Linq;
                         throw FieldTypeResolutionFailedException(type.Name, field.Name, null);
 
                     if (!UseCustomClassNameIfDefined(ref fieldTypeName))
-                        fieldTypeName = NamingHelper.ToPascalCase(fieldTypeName);
+                        fieldTypeName = NamingHelper.ToValidCSharpName(fieldTypeName);
 
                     var builderParameterName = NamingHelper.LowerFirst(fieldTypeName);
                     writer.Write(indentation);
@@ -1268,7 +1263,7 @@ using Newtonsoft.Json.Linq;
 
             foreach (var directive in schema.Directives.Where(d => d.Locations.Contains(directiveLocation)))
             {
-                var csharpDirectiveName = NamingHelper.ToPascalCase(directive.Name);
+                var csharpDirectiveName = NamingHelper.ToValidCSharpName(directive.Name);
                 var directiveClassName = csharpDirectiveName + "Directive";
                 var directiveParameterName = NamingHelper.LowerFirst(csharpDirectiveName);
 
@@ -1367,7 +1362,7 @@ using Newtonsoft.Json.Linq;
 
             var argumentTypeDescription =
                 unwrappedType.Kind == GraphQlTypeKind.Enum
-                    ? ConvertToTypeDescription(NamingHelper.ToPascalCase(unwrappedType.Name) + "?")
+                    ? ConvertToTypeDescription(NamingHelper.ToValidCSharpName(unwrappedType.Name) + "?")
                     : ScalarToNetType(baseType, argument.Name, argumentType);
             
             var argumentNetType = argumentTypeDescription.NetTypeName;
@@ -1381,7 +1376,7 @@ using Newtonsoft.Json.Linq;
                 argumentNetType = unwrappedType.Name;
 
                 if (!UseCustomClassNameIfDefined(ref argumentNetType))
-                    argumentNetType = NamingHelper.ToPascalCase(argumentNetType);
+                    argumentNetType = NamingHelper.ToValidCSharpName(argumentNetType);
 
                 if (!isTypeNotNull)
                     argumentNetType = AddQuestionMarkIfNullableReferencesEnabled(argumentNetType);
@@ -1392,7 +1387,7 @@ using Newtonsoft.Json.Linq;
             if (!isArgumentNotNull)
                 argumentNetType = AddQuestionMarkIfNullableReferencesEnabled(argumentNetType);
 
-            var netParameterName = NamingHelper.ToValidCSharpName(NamingHelper.LowerFirst(NamingHelper.ToPascalCase(argument.Name)));
+            var netParameterName = NamingHelper.ToValidCSharpName(argument.Name);
             var argumentDefinition = $"{argumentNetType} {netParameterName}";
             if (!isArgumentNotNull)
                 argumentDefinition += " = null";
@@ -1463,7 +1458,7 @@ using Newtonsoft.Json.Linq;
 
         private void GenerateEnum(GenerationContext context, GraphQlType type)
         {
-            var enumName = NamingHelper.ToPascalCase(type.Name);
+            var enumName = NamingHelper.ToValidCSharpName(type.Name);
             
             context.BeforeEnumGeneration(enumName);
             
@@ -1484,9 +1479,7 @@ using Newtonsoft.Json.Linq;
                 GenerateCodeComments(writer, enumValue.Description, context.Indentation + 4);
                 writer.Write(indentation);
                 writer.Write("    ");
-                var netIdentifier = NamingHelper.ToCSharpEnumName(enumValue.Name);
-                if (netIdentifier != enumValue.Name)
-                    writer.Write($"[EnumMember(Value = \"{enumValue.Name}\")] ");
+                var netIdentifier = enumValue.Name;
 
                 writer.Write(netIdentifier);
 
@@ -1530,7 +1523,7 @@ using Newtonsoft.Json.Linq;
 
         private void GenerateDirective(GenerationContext context, GraphQlDirective directive)
         {
-            var directiveName = NamingHelper.ToPascalCase(directive.Name) + "Directive";
+            var directiveName = NamingHelper.ToValidCSharpName(directive.Name) + "Directive";
 
             context.BeforeDirectiveGeneration(directiveName);
 
