@@ -1,7 +1,6 @@
 ﻿public struct FieldMetadata
 {
     public string Name { get; set; }
-    public string DefaultAlias { get; set; }
     public bool IsComplex { get; set; }
     public Type QueryBuilderType { get; set; }
 }
@@ -276,45 +275,6 @@ internal static class GraphQlQueryHelper
 
         builder.Append("}");
 
-        return builder.ToString();
-    }
-
-    public static string BuildDirective(GraphQlDirective directive, Formatting formatting, int level, byte indentationSize)
-    {
-        if (directive == null)
-            return String.Empty;
-
-        var isIndentedFormatting = formatting == Formatting.Indented;
-        var indentationSpace = isIndentedFormatting ? " " : String.Empty;
-        var builder = new StringBuilder();
-        builder.Append(indentationSpace);
-        builder.Append("@");
-        builder.Append(directive.Name);
-        builder.Append("(");
-
-        string separator = null;
-        foreach (var kvp in directive.Arguments)
-        {
-            var argumentName = kvp.Key;
-            var argument = kvp.Value;
-
-            builder.Append(separator);
-            builder.Append(argumentName);
-            builder.Append(":");
-            builder.Append(indentationSpace);
-
-            if (argument.Name == null)
-                builder.Append(BuildArgumentValue(argument.Value, null, formatting, level, indentationSize));
-            else
-            {
-                builder.Append("$");
-                builder.Append(argument.Name);
-            }
-
-            separator = isIndentedFormatting ? ", " : ",";
-        }
-
-        builder.Append(")");
         return builder.ToString();
     }
 
@@ -634,20 +594,20 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
         return builder.ToString();
     }
 
-    protected void IncludeScalarField(string fieldName, string alias, IList<QueryBuilderArgumentInfo> args, GraphQlDirective[] directives)
+    protected void IncludeScalarField(string fieldName, IList<QueryBuilderArgumentInfo> args)
     {
-        _fieldCriteria[alias ?? fieldName] = new GraphQlScalarFieldCriteria(fieldName, alias, args, directives);
+        _fieldCriteria[fieldName] = new GraphQlScalarFieldCriteria(fieldName, args);
     }
 
-    protected void IncludeObjectField(string fieldName, string alias, GraphQlQueryBuilder objectFieldQueryBuilder, IList<QueryBuilderArgumentInfo> args, GraphQlDirective[] directives)
+    protected void IncludeObjectField(string fieldName, GraphQlQueryBuilder objectFieldQueryBuilder, IList<QueryBuilderArgumentInfo> args)
     {
-        _fieldCriteria[alias ?? fieldName] = new GraphQlObjectFieldCriteria(fieldName, alias, objectFieldQueryBuilder, args, directives);
+        _fieldCriteria[fieldName] = new GraphQlObjectFieldCriteria(fieldName, objectFieldQueryBuilder, args);
     }
 
-    protected void IncludeFragment(GraphQlQueryBuilder objectFieldQueryBuilder, GraphQlDirective[] directives)
+    protected void IncludeFragment(GraphQlQueryBuilder objectFieldQueryBuilder)
     {
         _fragments = _fragments ?? new Dictionary<string, GraphQlFragmentCriteria>();
-        _fragments[objectFieldQueryBuilder.TypeName] = new GraphQlFragmentCriteria(objectFieldQueryBuilder, directives);
+        _fragments[objectFieldQueryBuilder.TypeName] = new GraphQlFragmentCriteria(objectFieldQueryBuilder);
     }
 
     protected void ExcludeField(string fieldName)
@@ -668,7 +628,7 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
         foreach (var field in fields)
         {
             if (field.QueryBuilderType == null)
-                IncludeScalarField(field.Name, field.DefaultAlias, null, null);
+                IncludeScalarField(field.Name, null);
             else
             {
                 var builderType = GetType();
@@ -685,7 +645,7 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
                 foreach (var includeFragmentMethod in includeFragmentMethods)
                     includeFragmentMethod.Invoke(queryBuilder, new object[] { InitializeChildBuilder(builderType, includeFragmentMethod.GetParameters()[0].ParameterType, parentTypes) });
 
-                IncludeObjectField(field.Name, field.DefaultAlias, queryBuilder, null, null);
+                IncludeObjectField(field.Name, queryBuilder, null);
             }
         }
     }
@@ -720,18 +680,14 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
         private readonly GraphQlDirective[] _directives;
 
         protected readonly string FieldName;
-        protected readonly string Alias;
 
         protected static string GetIndentation(Formatting formatting, int level, byte indentationSize) =>
             formatting == Formatting.Indented ? GraphQlQueryHelper.GetIndentation(level, indentationSize) : null;
 
-        protected GraphQlFieldCriteria(string fieldName, string alias, IList<QueryBuilderArgumentInfo> args, GraphQlDirective[] directives)
+        protected GraphQlFieldCriteria(string fieldName, IList<QueryBuilderArgumentInfo> args)
         {
-            GraphQlQueryHelper.ValidateGraphQlIdentifier(nameof(alias), alias);
             FieldName = fieldName;
-            Alias = alias;
             _args = args;
-            _directives = directives;
         }
 
         public abstract string Build(Formatting formatting, int level, byte indentationSize);
@@ -749,46 +705,35 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
 
             return $"({String.Join($",{separator}", arguments)})";
         }
-
-        protected string BuildDirectiveClause(Formatting formatting, int level, byte indentationSize) =>
-            _directives == null ? null : String.Concat(_directives.Select(d => d == null ? null : GraphQlQueryHelper.BuildDirective(d, formatting, level, indentationSize)));
-
-        protected static string BuildAliasPrefix(string alias, Formatting formatting)
-        {
-            var separator = formatting == Formatting.Indented ? " " : String.Empty;
-            return String.IsNullOrWhiteSpace(alias) ? null : alias + ':' + separator;
-        }
     }
 
     private class GraphQlScalarFieldCriteria : GraphQlFieldCriteria
     {
-        public GraphQlScalarFieldCriteria(string fieldName, string alias, IList<QueryBuilderArgumentInfo> args, GraphQlDirective[] directives)
-            : base(fieldName, alias, args, directives)
+        public GraphQlScalarFieldCriteria(string fieldName, IList<QueryBuilderArgumentInfo> args)
+            : base(fieldName, args)
         {
         }
 
         public override string Build(Formatting formatting, int level, byte indentationSize) =>
             GetIndentation(formatting, level, indentationSize) +
-            BuildAliasPrefix(Alias, formatting) +
             FieldName +
-            BuildArgumentClause(formatting, level, indentationSize) +
-            BuildDirectiveClause(formatting, level, indentationSize);
+            BuildArgumentClause(formatting, level, indentationSize);
     }
 
     private class GraphQlObjectFieldCriteria : GraphQlFieldCriteria
     {
         private readonly GraphQlQueryBuilder _objectQueryBuilder;
 
-        public GraphQlObjectFieldCriteria(string fieldName, string alias, GraphQlQueryBuilder objectQueryBuilder, IList<QueryBuilderArgumentInfo> args, GraphQlDirective[] directives)
-            : base(fieldName, alias, args, directives)
+        public GraphQlObjectFieldCriteria(string fieldName, GraphQlQueryBuilder objectQueryBuilder, IList<QueryBuilderArgumentInfo> args)
+            : base(fieldName, args)
         {
             _objectQueryBuilder = objectQueryBuilder;
         }
 
         public override string Build(Formatting formatting, int level, byte indentationSize) =>
             _objectQueryBuilder._fieldCriteria.Count > 0 || _objectQueryBuilder._fragments?.Count > 0
-                ? GetIndentation(formatting, level, indentationSize) + BuildAliasPrefix(Alias, formatting) + FieldName +
-                  BuildArgumentClause(formatting, level, indentationSize) + BuildDirectiveClause(formatting, level, indentationSize) + _objectQueryBuilder.Build(formatting, level + 1, indentationSize)
+                ? GetIndentation(formatting, level, indentationSize) + FieldName +
+                  BuildArgumentClause(formatting, level, indentationSize) + _objectQueryBuilder.Build(formatting, level + 1, indentationSize)
                 : null;
     }
 
@@ -796,7 +741,7 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
     {
         private readonly GraphQlQueryBuilder _objectQueryBuilder;
 
-        public GraphQlFragmentCriteria(GraphQlQueryBuilder objectQueryBuilder, GraphQlDirective[] directives) : base(objectQueryBuilder.TypeName, null, null, directives)
+        public GraphQlFragmentCriteria(GraphQlQueryBuilder objectQueryBuilder) : base(objectQueryBuilder.TypeName, null)
         {
             _objectQueryBuilder = objectQueryBuilder;
         }
@@ -805,7 +750,7 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
             _objectQueryBuilder._fieldCriteria.Count == 0
                 ? null
                 : GetIndentation(formatting, level, indentationSize) + "..." + (formatting == Formatting.Indented ? " " : null) + "on " +
-                  FieldName + BuildArgumentClause(formatting, level, indentationSize) + BuildDirectiveClause(formatting, level, indentationSize) + _objectQueryBuilder.Build(formatting, level + 1, indentationSize);
+                  FieldName + BuildArgumentClause(formatting, level, indentationSize) + _objectQueryBuilder.Build(formatting, level + 1, indentationSize);
     }
 }
 
@@ -833,27 +778,27 @@ public abstract class GraphQlQueryBuilder<TQueryBuilder> : GraphQlQueryBuilder w
         return (TQueryBuilder)this;
     }
 
-    public TQueryBuilder WithTypeName(string alias = null, params GraphQlDirective[] directives)
+    public TQueryBuilder WithTypeName()
     {
-        IncludeScalarField("__typename", alias, null, directives);
+        IncludeScalarField("__typename", null);
         return (TQueryBuilder)this;
     }
 
-    protected TQueryBuilder WithScalarField(string fieldName, string alias, GraphQlDirective[] directives, IList<QueryBuilderArgumentInfo> args = null)
+    protected TQueryBuilder WithScalarField(string fieldName, IList<QueryBuilderArgumentInfo> args = null)
     {
-        IncludeScalarField(fieldName, alias, args, directives);
+        IncludeScalarField(fieldName, args);
         return (TQueryBuilder)this;
     }
 
-    protected TQueryBuilder WithObjectField(string fieldName, string alias, GraphQlQueryBuilder queryBuilder, GraphQlDirective[] directives, IList<QueryBuilderArgumentInfo> args = null)
+    protected TQueryBuilder WithObjectField(string fieldName, GraphQlQueryBuilder queryBuilder, IList<QueryBuilderArgumentInfo> args = null)
     {
-        IncludeObjectField(fieldName, alias, queryBuilder, args, directives);
+        IncludeObjectField(fieldName, queryBuilder, args);
         return (TQueryBuilder)this;
     }
 
-    protected TQueryBuilder WithFragment(GraphQlQueryBuilder queryBuilder, GraphQlDirective[] directives)
+    protected TQueryBuilder WithFragment(GraphQlQueryBuilder queryBuilder)
     {
-        IncludeFragment(queryBuilder, directives);
+        IncludeFragment(queryBuilder);
         return (TQueryBuilder)this;
     }
 

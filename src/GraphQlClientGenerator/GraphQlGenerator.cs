@@ -949,12 +949,6 @@ using Newtonsoft.Json.Linq;
                     writer.Write('"');
 
                     var csharpPropertyName = NamingHelper.ToValidCSharpName(field.Name);
-                    if (_configuration.JsonPropertyGeneration == JsonPropertyGenerationOption.UseDefaultAlias && !String.Equals(field.Name, csharpPropertyName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        writer.Write(", DefaultAlias = \"");
-                        writer.Write(NamingHelper.LowerFirst(csharpPropertyName));
-                        writer.Write('"');
-                    }
 
                     if (isComplex)
                     {
@@ -1079,21 +1073,6 @@ using Newtonsoft.Json.Linq;
                 var returnPrefix = ReturnPrefix(requiresFullBody);
                 var csharpPropertyName = field.Name;
 
-                void WriteAliasParameter()
-                {
-                    writer.Write(stringDataType);
-                    writer.Write(" alias = ");
-
-                    if (_configuration.JsonPropertyGeneration == JsonPropertyGenerationOption.UseDefaultAlias && !String.Equals(field.Name, csharpPropertyName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        writer.Write('"');
-                        writer.Write(NamingHelper.LowerFirst(csharpPropertyName));
-                        writer.Write('"');
-                    }
-                    else
-                        writer.Write("null");
-                }
-
                 if (fieldType.Kind == GraphQlTypeKind.Scalar || fieldType.Kind == GraphQlTypeKind.Enum || fieldType.Kind == GraphQlTypeKind.List)
                 {
                     writer.Write(indentation);
@@ -1104,13 +1083,6 @@ using Newtonsoft.Json.Linq;
                     writer.Write("(");
                     writer.Write(methodParameters);
 
-                    if (!String.IsNullOrEmpty(methodParameters))
-                        writer.Write(", ");
-
-                    WriteAliasParameter();
-                    
-                    var fieldDirectiveParameterNameList = WriteDirectiveParameterList(schema, argumentDefinitions, GraphQlDirectiveLocation.Field, writer);
-                    
                     writer.Write(")");
 
                     WriteQueryBuilderMethodBody(
@@ -1124,8 +1096,7 @@ using Newtonsoft.Json.Linq;
                             writer.Write(returnPrefix);
                             writer.Write("WithScalarField(\"");
                             writer.Write(field.Name);
-                            writer.Write("\", alias, ");
-                            writer.Write(fieldDirectiveParameterNameList);
+                            writer.Write("\"");
 
                             if (argumentDefinitions.Length > 0)
                                 writer.Write(", args");
@@ -1152,14 +1123,6 @@ using Newtonsoft.Json.Linq;
                         writer.Write(methodParameters);
                     }
 
-                    if (!isFragment)
-                    {
-                        writer.Write(", ");
-                        WriteAliasParameter();
-                    }
-
-                    var fieldDirectiveParameterNameList = WriteDirectiveParameterList(schema, argumentDefinitions, GraphQlDirectiveLocation.Field, writer);
-
                     writer.Write(")");
 
                     WriteQueryBuilderMethodBody(
@@ -1179,14 +1142,11 @@ using Newtonsoft.Json.Linq;
                             {
                                 writer.Write("ObjectField(\"");
                                 writer.Write(field.Name);
-                                writer.Write("\", alias, ");
+                                writer.Write("\", ");
                             }
 
                             writer.Write(builderParameterName);
                             writer.Write("QueryBuilder");
-
-                            writer.Write(", ");
-                            writer.Write(fieldDirectiveParameterNameList);
 
                             if (argumentDefinitions.Length > 0)
                                 writer.Write(", args");
@@ -1240,49 +1200,6 @@ using Newtonsoft.Json.Linq;
                     : String.Concat(Enumerable.Repeat("IList<", levels).Concat(new[] { "{0}" }).Concat(nullableSymbols.Select(s => ">" + s)));
 
             return type;
-        }
-
-        private string WriteDirectiveParameterList(GraphQlSchema schema, IEnumerable<QueryBuilderParameterDefinition> argumentDefinitions, GraphQlDirectiveLocation directiveLocation, TextWriter writer)
-        {
-            var argumentNames = new HashSet<string>(argumentDefinitions.Select(ad => ad.NetParameterName));
-            var directiveParameterNames = new List<string>();
-
-            foreach (var directive in schema.Directives.Where(d => d.Locations.Contains(directiveLocation)))
-            {
-                var csharpDirectiveName = NamingHelper.ToValidCSharpName(directive.Name);
-                var directiveClassName = csharpDirectiveName + "Directive";
-                var directiveParameterName = NamingHelper.LowerFirst(csharpDirectiveName);
-
-                if (argumentNames.Contains(directiveParameterName))
-                {
-                    directiveParameterName += "Directive";
-
-                    if (argumentNames.Contains(directiveParameterName))
-                    {
-                        directiveParameterName += "Value";
-
-                        var parameterCounter = 0;
-                        var directiveParameterNameWithCounter = directiveParameterName;
-                        while (argumentNames.Contains(directiveParameterNameWithCounter))
-                            directiveParameterNameWithCounter = directiveParameterName + ++parameterCounter;
-
-                        directiveParameterName = directiveParameterNameWithCounter;
-                    }
-                }
-
-                directiveParameterNames.Add(directiveParameterName);
-
-                writer.Write(", ");
-                writer.Write(AddQuestionMarkIfNullableReferencesEnabled(directiveClassName));
-                writer.Write(" ");
-                writer.Write(directiveParameterName);
-                writer.Write(" = null");
-            }
-
-            return
-                directiveParameterNames.Any()
-                    ? "new " + AddQuestionMarkIfNullableReferencesEnabled("GraphQlDirective") + "[] { " + String.Join(", ", directiveParameterNames) + " }"
-                    : "null";
         }
 
         private static void WriteQueryBuilderMethodBody(bool requiresFullBody, string indentation, TextWriter writer, Action writeBody)
