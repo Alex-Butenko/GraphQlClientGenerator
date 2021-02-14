@@ -1077,7 +1077,7 @@ using Newtonsoft.Json.Linq;
 
                 var requiresFullBody = useCompatibleSyntax || argumentDefinitions.Any();
                 var returnPrefix = ReturnPrefix(requiresFullBody);
-                var csharpPropertyName = NamingHelper.ToValidCSharpName(field.Name);
+                var csharpPropertyName = field.Name;
 
                 void WriteAliasParameter()
                 {
@@ -1099,7 +1099,7 @@ using Newtonsoft.Json.Linq;
                     writer.Write(indentation);
                     writer.Write("    public ");
                     writer.Write(className);
-                    writer.Write(" With");
+                    writer.Write(" ");
                     writer.Write(csharpPropertyName);
                     writer.Write("(");
                     writer.Write(methodParameters);
@@ -1144,7 +1144,7 @@ using Newtonsoft.Json.Linq;
 
                     var builderParameterName = NamingHelper.LowerFirst(fieldTypeName);
                     writer.Write(indentation);
-                    writer.Write($"    public {className} With{csharpPropertyName}{(isFragment ? "Fragment" : null)}({fieldTypeName}QueryBuilder {builderParameterName}QueryBuilder");
+                    writer.Write($"    public {className} {NamingHelper.ToValidCSharpName(csharpPropertyName)}{(isFragment ? "Fragment" : null)}({fieldTypeName}QueryBuilder {builderParameterName}QueryBuilder");
 
                     if (argumentDefinitions.Length > 0)
                     {
