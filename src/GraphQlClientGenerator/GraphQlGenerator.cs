@@ -446,7 +446,7 @@ using Newtonsoft.Json.Linq;
 
                     foreach (var @interface in complexType.Interfaces)
                     {
-                        var interfaceName = "I" + _configuration.ClassPrefix + @interface.Name + _configuration.ClassSuffix;
+                        var interfaceName = "I" + _configuration.ClassPrefix + NamingHelper.ToPascalCase(@interface.Name) + _configuration.ClassSuffix;
                         interfacesToImplement.Add(interfaceName);
 
                         foreach (var interfaceField in complexTypeDictionary[@interface.Name].Fields.Where(FilterDeprecatedFields))
