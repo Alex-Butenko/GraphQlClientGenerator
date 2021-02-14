@@ -519,7 +519,7 @@ using Newtonsoft.Json.Linq;
                         writer.WriteLine();
 
                         writer.Write(indentation);
-                        writer.Write("        set");
+                        writer.Write("        init");
                         writer.Write(useCompatibleSyntax ? " { " : " => ");
                         writer.Write(kvp.Key);
                         writer.Write(" = new InputPropertyInfo { Name = \"");
