@@ -1195,20 +1195,6 @@ using Newtonsoft.Json.Linq;
                         });
                 }
 
-                if (!isFragment)
-                {
-                    writer.WriteLine();
-
-                    writer.Write(indentation);
-                    writer.Write($"    public {className} Except{csharpPropertyName}()");
-
-                    WriteQueryBuilderMethodBody(
-                        useCompatibleSyntax,
-                        indentation,
-                        writer,
-                        () => writer.WriteLine($"{ReturnPrefix(useCompatibleSyntax)}ExceptField(\"{field.Name}\");"));
-                }
-
                 if (i < fields.Count - 1)
                     writer.WriteLine();
             }
