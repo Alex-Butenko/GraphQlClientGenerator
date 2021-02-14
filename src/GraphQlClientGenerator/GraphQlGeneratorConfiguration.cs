@@ -77,7 +77,7 @@ namespace GraphQlClientGenerator
             CSharpVersion = CSharpVersion.Compatible;
             ScalarFieldTypeMappingProvider = DefaultScalarFieldTypeMappingProvider.Instance;
             PropertyAccessorBodyWriter = GeneratePropertyAccessors;
-            CommentGeneration = CommentGenerationOption.Disabled;
+            CommentGeneration = CommentGenerationOption.CodeSummary;
             IncludeDeprecatedFields = true;
             FloatTypeMapping = FloatTypeMapping.Decimal;
             BooleanTypeMapping = BooleanTypeMapping.Boolean;
