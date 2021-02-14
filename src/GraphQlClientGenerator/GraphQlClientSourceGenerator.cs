@@ -109,12 +109,6 @@ namespace GraphQlClientGenerator
 
                 var configuration = new GraphQlGeneratorConfiguration { TreatUnknownObjectAsScalar = true };
 
-                context.AnalyzerConfigOptions.GlobalOptions.TryGetValue(BuildPropertyKeyPrefix + "ClassPrefix", out var classPrefix);
-                configuration.ClassPrefix = classPrefix;
-
-                context.AnalyzerConfigOptions.GlobalOptions.TryGetValue(BuildPropertyKeyPrefix + "ClassSuffix", out var classSuffix);
-                configuration.ClassSuffix = classSuffix;
-
                 if (compilation.LanguageVersion >= LanguageVersion.CSharp6)
                     configuration.CSharpVersion =
                         compilation.Options.NullableContextOptions == NullableContextOptions.Disable

@@ -346,8 +346,6 @@ namespace GraphQlClientGenerator.Test
                 new GraphQlGeneratorConfiguration
                 {
                     CSharpVersion = CSharpVersion.Newest,
-                    ClassPrefix = "Test",
-                    ClassSuffix = "V1",
                     MemberAccessibility = MemberAccessibility.Internal
                 };
             
