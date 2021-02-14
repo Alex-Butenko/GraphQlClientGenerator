@@ -430,7 +430,7 @@ using Newtonsoft.Json.Linq;
                                 field.DeprecationReason,
                                 true,
                                 (_, backingFieldName) =>
-                                    writer.Write(generateBackingFields ? _configuration.PropertyAccessorBodyWriter(backingFieldName, GetDataPropertyType(complexType, field)) : " { get; set; }"),
+                                    writer.Write(generateBackingFields ? _configuration.PropertyAccessorBodyWriter(backingFieldName, GetDataPropertyType(complexType, field)) : " { get; init; }"),
                                 context);
                     }
                 }
@@ -567,7 +567,7 @@ using Newtonsoft.Json.Linq;
             GenerateFileMember(context, "interface", interfaceName, graphQlType, null, generateInterfaceBody);
 
         private string GenerateDataClass(GenerationContext context, string typeName, GraphQlType graphQlType, string baseTypeName, Action generateClassBody) =>
-            GenerateFileMember(context, "class", typeName, graphQlType, baseTypeName, generateClassBody);
+            GenerateFileMember(context, "record", typeName, graphQlType, baseTypeName, generateClassBody);
 
         private string GenerateFileMember(GenerationContext context, string memberType, string typeName, GraphQlType graphQlType, string baseTypeName, Action generateFileMemberBody)
         {
