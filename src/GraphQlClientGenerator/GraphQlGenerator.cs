@@ -1053,7 +1053,7 @@ using System.Text.RegularExpressions;
                         writer,
                         () =>
                         {
-                            AppendArgumentDictionary(indentation, writer, argumentDefinitions);
+                            AppendArgumentDictionary(indentation, writer, argumentDefinitions, "");
 
                             writer.Write(returnPrefix);
                             writer.Write("WithScalarField(\"");
@@ -1076,14 +1076,21 @@ using System.Text.RegularExpressions;
                         fieldTypeName = NamingHelper.ToValidCSharpName(fieldTypeName);
 
                     var builderParameterName = NamingHelper.LowerFirst(fieldTypeName);
+
+                    string validCSharpPropertyName = NamingHelper.ToValidCSharpName(csharpPropertyName);
+                    if (argumentDefinitions.Length > 0) {
+                        writer.Write(indentation);
+                        writer.WriteLine($"    public record {validCSharpPropertyName}Args({methodParameters});");
+                    }
+
                     writer.Write(indentation);
-                    writer.Write($"    public {className} {NamingHelper.ToValidCSharpName(csharpPropertyName)}{(isFragment ? "Fragment" : null)}({fieldTypeName}Builder {builderParameterName}Builder");
+                    writer.Write($"    public {className} {validCSharpPropertyName}{(isFragment ? "Fragment" : null)}(");
 
                     if (argumentDefinitions.Length > 0)
                     {
-                        writer.Write(", ");
-                        writer.Write(methodParameters);
+                        writer.Write($"{validCSharpPropertyName}Args arguments, ");
                     }
+                    writer.Write($"{fieldTypeName}Builder {builderParameterName}Builder");
 
                     writer.Write(")");
 
@@ -1093,7 +1100,7 @@ using System.Text.RegularExpressions;
                         writer,
                         () =>
                         {
-                            AppendArgumentDictionary(indentation, writer, argumentDefinitions);
+                            AppendArgumentDictionary(indentation, writer, argumentDefinitions, "arguments.");
 
                             writer.Write(returnPrefix);
                             writer.Write("With");
@@ -1274,7 +1281,7 @@ using System.Text.RegularExpressions;
                 throw new InvalidOperationException($"Resulting class name '{className}' is not valid. ");
         }
 
-        private static void AppendArgumentDictionary(string indentation, TextWriter writer, ICollection<QueryBuilderParameterDefinition> argumentDefinitions)
+        private static void AppendArgumentDictionary(string indentation, TextWriter writer, ICollection<QueryBuilderParameterDefinition> argumentDefinitions, string argNamePrefix)
         {
             if (argumentDefinitions.Count == 0)
                 return;
@@ -1282,7 +1289,7 @@ using System.Text.RegularExpressions;
             writer.Write(indentation);
             writer.WriteLine("        var args = new List<QueryBuilderArgumentInfo>();");
 
-            static void WriteAddKeyValuePair(TextWriter writer, QueryBuilderParameterDefinition argumentDefinition)
+            static void WriteAddKeyValuePair(TextWriter writer, QueryBuilderParameterDefinition argumentDefinition, string argNamePrefix)
             {
                 var argument = argumentDefinition.Argument;
                 writer.Write("args.Add(new QueryBuilderArgumentInfo { ArgumentName = \"");
@@ -1292,6 +1299,7 @@ using System.Text.RegularExpressions;
                 writer.Write(">(\"");
                 writer.Write(argument.Name);
                 writer.Write("\", ");
+                writer.Write(argNamePrefix);
                 writer.Write(argumentDefinition.NetParameterName);
                 writer.Write(") ");
 
@@ -1312,16 +1320,17 @@ using System.Text.RegularExpressions;
                 if (argumentDefinition.Argument.Type.Kind == GraphQlTypeKind.NonNull)
                 {
                     writer.Write("        ");
-                    WriteAddKeyValuePair(writer, argumentDefinition);
+                    WriteAddKeyValuePair(writer, argumentDefinition, argNamePrefix);
                 }
                 else
                 {
                     writer.Write("        if (");
+                    writer.Write(argNamePrefix);
                     writer.Write(argumentDefinition.NetParameterName);
                     writer.WriteLine(" != null)");
                     writer.Write(indentation);
                     writer.Write("            ");
-                    WriteAddKeyValuePair(writer, argumentDefinition);
+                    WriteAddKeyValuePair(writer, argumentDefinition, argNamePrefix);
                     writer.WriteLine();
                 }
             }
