@@ -153,7 +153,7 @@ using Newtonsoft.Json.Linq;
 
             GenerateEnums(context);
 
-            GenerateDirectives(context);
+            //GenerateDirectives(context);
 
             GenerateQueryBuilders(context);
 
@@ -661,10 +661,12 @@ using Newtonsoft.Json.Linq;
             return typeFields?.Where(FilterDeprecatedFields).ToList();
         }
 
-        private string AddQuestionMarkIfNullableReferencesEnabled(string dataTypeIdentifier) => AddQuestionMarkIfNullableReferencesEnabled(_configuration, dataTypeIdentifier);
+        private string AddQuestionMarkIfNullableReferencesEnabled(string dataTypeIdentifier) =>
+            AddQuestionMarkIfNullableReferencesEnabled(_configuration, dataTypeIdentifier);
 
         internal static string AddQuestionMarkIfNullableReferencesEnabled(GraphQlGeneratorConfiguration configuration, string dataTypeIdentifier) =>
-            configuration.CSharpVersion == CSharpVersion.NewestWithNullableReferences ? dataTypeIdentifier + "?" : dataTypeIdentifier;
+            configuration.CSharpVersion == CSharpVersion.NewestWithNullableReferences && !dataTypeIdentifier.EndsWith("?")
+                ? dataTypeIdentifier + "?" : dataTypeIdentifier;
 
         private bool UseCustomClassNameIfDefined(ref string typeName)
         {
@@ -747,8 +749,8 @@ using Newtonsoft.Json.Linq;
             else if (isBaseTypeInputObject)
             {
                 writer.Write(indentation);
-                writer.WriteLine($"    [JsonConverter(typeof(QueryBuilderParameterConverter<{propertyTypeName}>))]");
-                propertyTypeName = AddQuestionMarkIfNullableReferencesEnabled($"QueryBuilderParameter<{propertyTypeName}>");
+                writer.WriteLine($"    [JsonConverter(typeof({propertyTypeName}))]");
+                propertyTypeName = AddQuestionMarkIfNullableReferencesEnabled(propertyTypeName);
             }
 
             if (isPreprocessorDirectiveDisableNewtonsoftJsonRequired)
@@ -1285,7 +1287,7 @@ using Newtonsoft.Json.Linq;
                     argumentNetType = AddQuestionMarkIfNullableReferencesEnabled(argumentNetType);
             }
 
-            argumentNetType = isCollection ? $"QueryBuilderParameter<IEnumerable<{argumentNetType}>>" : $"QueryBuilderParameter<{argumentNetType}>";
+            argumentNetType = isCollection ? $"IEnumerable<{argumentNetType}>" : argumentNetType;
 
             if (!isArgumentNotNull)
                 argumentNetType = AddQuestionMarkIfNullableReferencesEnabled(argumentNetType);
@@ -1300,6 +1302,7 @@ using Newtonsoft.Json.Linq;
                 {
                     Argument = argument,
                     NetParameterName = netParameterName,
+                    NetParameterType = argumentNetType,
                     NetParameterDefinitionClause = argumentDefinition,
                     FormatMask = argumentTypeDescription.FormatMask
                 };
@@ -1324,8 +1327,13 @@ using Newtonsoft.Json.Linq;
                 var argument = argumentDefinition.Argument;
                 writer.Write("args.Add(new QueryBuilderArgumentInfo { ArgumentName = \"");
                 writer.Write(argument.Name);
-                writer.Write("\", ArgumentValue = ");
+                writer.Write("\", ArgumentValue = new GraphQlQueryParameter<");
+                writer.Write(argumentDefinition.NetParameterType);
+                writer.Write(">(\"");
+                writer.Write(argument.Name);
+                writer.Write("\", ");
                 writer.Write(argumentDefinition.NetParameterName);
+                writer.Write(") ");
 
                 if (!String.IsNullOrEmpty(argumentDefinition.FormatMask))
                 {
@@ -1538,6 +1546,7 @@ using Newtonsoft.Json.Linq;
         {
             public GraphQlArgument Argument;
             public string NetParameterName;
+            public string NetParameterType;
             public string NetParameterDefinitionClause;
             public string FormatMask;
         }
