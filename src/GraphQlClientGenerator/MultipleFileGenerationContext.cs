@@ -14,7 +14,7 @@ namespace GraphQlClientGenerator
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-  <ItemGroup Condition=""!$(DefineConstants.Contains(" + GraphQlGenerator.PreprocessorDirectiveDisableNewtonsoftJson + @"))"">
+  <ItemGroup>
     <PackageReference Include=""Newtonsoft.Json"" Version=""12.*"" />
   </ItemGroup>
 
@@ -27,9 +27,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.Serialization;
-#if!" + GraphQlGenerator.PreprocessorDirectiveDisableNewtonsoftJson + @"
-using Newtonsoft.Json;
-#endif
 ";
 
         private readonly List<FileInfo> _files = new List<FileInfo>();

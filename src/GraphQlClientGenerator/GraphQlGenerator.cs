@@ -30,10 +30,6 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-#if !" + PreprocessorDirectiveDisableNewtonsoftJson + @"
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-#endif
 ";
 
         private delegate void WriteDataClassPropertyBodyDelegate(ScalarFieldTypeDescription netType, string backingFieldName);
@@ -306,7 +302,7 @@ using Newtonsoft.Json.Linq;
                     break;
 
                 context.Writer.Write(indentation);
-                context.Writer.WriteLine(line.Replace("GRAPHQL_GENERATOR_DISABLE_NEWTONSOFT_JSON", PreprocessorDirectiveDisableNewtonsoftJson));
+                context.Writer.WriteLine(line);
             } while (true);
 
             context.AfterBaseClassGeneration();
@@ -711,52 +707,16 @@ using Newtonsoft.Json.Linq;
                 writer.WriteLine($"    [Obsolete{deprecationReason}]");
             }
 
-            if (decorateWithJsonPropertyAttribute)
-            {
-                decorateWithJsonPropertyAttribute =
-                    _configuration.JsonPropertyGeneration == JsonPropertyGenerationOption.Always ||
-                    !String.Equals(
-                        member.Name,
-                        propertyName.TrimStart('@'),
-                        _configuration.JsonPropertyGeneration == JsonPropertyGenerationOption.CaseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
-
-                if (_configuration.JsonPropertyGeneration == JsonPropertyGenerationOption.Never || _configuration.JsonPropertyGeneration == JsonPropertyGenerationOption.UseDefaultAlias)
-                    decorateWithJsonPropertyAttribute = false;
-            }
-
             var fieldType = member.Type.UnwrapIfNonNull();
             var isGraphQlInterfaceJsonConverterRequired = fieldType.Kind == GraphQlTypeKind.Interface || fieldType.Kind == GraphQlTypeKind.List && UnwrapListItemType(fieldType, out _).UnwrapIfNonNull().Kind == GraphQlTypeKind.Interface;
             var isBaseTypeInputObject = baseType.Kind == GraphQlTypeKind.InputObject;
-            var isPreprocessorDirectiveDisableNewtonsoftJsonRequired = !isInterfaceMember && decorateWithJsonPropertyAttribute || isGraphQlInterfaceJsonConverterRequired || isBaseTypeInputObject;
-            if (isPreprocessorDirectiveDisableNewtonsoftJsonRequired)
-            {
-                writer.Write(indentation);
-                writer.Write("    #if !");
-                writer.WriteLine(PreprocessorDirectiveDisableNewtonsoftJson);
-            }
-
-            if (!isInterfaceMember && decorateWithJsonPropertyAttribute)
-            {
-                writer.Write(indentation);
-                writer.WriteLine($"    [JsonProperty(\"{member.Name}\")]");
-            }
 
             if (isGraphQlInterfaceJsonConverterRequired)
             {
-                writer.Write(indentation);
-                writer.WriteLine("    [JsonConverter(typeof(GraphQlInterfaceJsonConverter))]");
             }
             else if (isBaseTypeInputObject)
             {
-                writer.Write(indentation);
-                writer.WriteLine($"    [JsonConverter(typeof({propertyTypeName}))]");
                 propertyTypeName = AddQuestionMarkIfNullableReferencesEnabled(propertyTypeName);
-            }
-
-            if (isPreprocessorDirectiveDisableNewtonsoftJsonRequired)
-            {
-                writer.Write(indentation);
-                writer.WriteLine("    #endif");
             }
 
             writer.Write(indentation);
