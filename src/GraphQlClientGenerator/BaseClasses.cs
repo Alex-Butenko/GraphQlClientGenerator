@@ -500,7 +500,7 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
         IncludeAllFields();
     }
 
-    public string Build(Formatting formatting = Formatting.None, byte indentationSize = 2)
+    public string Build(Formatting formatting = Formatting.Indented, byte indentationSize = 2)
     {
         return Build(formatting, 1, indentationSize);
     }
