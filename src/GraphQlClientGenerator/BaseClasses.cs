@@ -701,7 +701,7 @@ public abstract class GraphQlQueryBuilder : IGraphQlQueryBuilder
 
             var arguments =
                 _args.Select(
-                    a => $"{a.ArgumentName}:{separator}{(a.ArgumentValue.Name == null ? GraphQlQueryHelper.BuildArgumentValue(a.ArgumentValue.Value, a.FormatMask, formatting, level, indentationSize) : "$" + a.ArgumentValue.Name)}");
+                    a => $"{a.ArgumentName}:{separator}{(a.ArgumentValue.Value != null ? GraphQlQueryHelper.BuildArgumentValue(a.ArgumentValue.Value, a.FormatMask, formatting, level, indentationSize) : "$" + a.ArgumentValue.Name)}");
 
             return $"({String.Join($",{separator}", arguments)})";
         }
