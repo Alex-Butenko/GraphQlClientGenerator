@@ -1,0 +1,15 @@
+﻿<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>GraphQlClientGeneratorForTests.Beta</id>
+    <version>1.0.0</version>
+    <title>Generates GraphQL builder and client types</title>
+    <authors>Jan Hučka, Alex Butenko</authors>
+    <owners>Alex Butenko</owners>
+    <licenseUrl>https://github.com/Husqvik/GraphQlClientGenerator/blob/master/License.md</licenseUrl>
+    <projectUrl>https://github.com/Alex-Butenko/GraphQlClientGenerator</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright © Jan Hučka 2021</copyright>
+    <tags>graphql</tags>
+  </metadata>
+</package>

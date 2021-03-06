@@ -6,7 +6,9 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <Title>GraphQL C# Client Generator Console App</Title>
-    <PackageId>GraphQlClientGenerator.Tool</PackageId>
+    <PackageId>GraphQlClientGenerator.Tool.Simplified</PackageId>
+    <LicenseUrl>https://github.com/Husqvik/GraphQlClientGenerator/blob/master/License.md</LicenseUrl>
+    <ProjectUrl>https://github.com/Alex-Butenko/GraphQlClientGenerator</ProjectUrl>
     <PackageTags>GraphQL Client Generator Tool Console</PackageTags>
     <PackageReleaseNotes>improved GraphQL query parameter type auto-detection</PackageReleaseNotes>
     <PackAsTool>true</PackAsTool>

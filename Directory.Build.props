@@ -4,12 +4,12 @@
     <LangVersion>latest</LangVersion>
     <Copyright>Copyright 2017-2021</Copyright>
     <Authors>Husqvik</Authors>
-    <Company>Tibber</Company>
-    <VersionPrefix>0.9.3</VersionPrefix>
+    <Owners>Alex Butenko</Owners>
+    <VersionPrefix>0.0.1</VersionPrefix>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/Husqvik/GraphQlClientGenerator</PackageProjectUrl>
     <PackageIcon>GraphQlLogo.png</PackageIcon>
-    <RepositoryUrl>https://github.com/Husqvik/GraphQlClientGenerator</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Alex-Butenko/GraphQlClientGenerator</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
