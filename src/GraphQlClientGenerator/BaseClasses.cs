@@ -682,3 +682,29 @@ public class ErrorLocation
     public int Line { get; set; }
     public int Column { get; set; }
 }
+
+public class AbstractConverter<TReal, TAbstract> : JsonConverter<TReal> where TReal : TAbstract {
+    public override void WriteJson(JsonWriter writer, TReal value, JsonSerializer serializer) =>
+        throw new NotImplementedException();
+
+    public override TReal ReadJson(JsonReader reader, Type objectType, TReal existingValue, bool hasExistingValue,
+        JsonSerializer serializer) {
+        if (objectType != typeof(TAbstract)) {
+            serializer.ContractResolver.ResolveContract(objectType).Converter = null;
+        }
+
+        return serializer.Deserialize<TReal>(reader);
+    }
+}
+
+public class ConcreteConverter<TReal> : JsonConverter<TReal> {
+    public override void WriteJson(JsonWriter writer, TReal value, JsonSerializer serializer) =>
+        throw new NotImplementedException();
+
+    public override TReal ReadJson(JsonReader reader, Type objectType, TReal existingValue, bool hasExistingValue,
+        JsonSerializer serializer) {
+
+        serializer.ContractResolver.ResolveContract(objectType).Converter = null;
+        return serializer.Deserialize<TReal>(reader);
+    }
+}

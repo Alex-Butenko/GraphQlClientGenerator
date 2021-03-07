@@ -30,6 +30,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 ";
 
         private delegate void WriteDataClassPropertyBodyDelegate(ScalarFieldTypeDescription netType, string backingFieldName);
@@ -435,6 +436,7 @@ using System.Text.RegularExpressions;
                 if (isInterface)
                 {
                     interfacesToImplement.Add(GenerateInterface(context, csharpTypeName, complexType, () => GenerateBody(true)));
+                    GenerateDataClass(context, csharpTypeName + "Implementation", complexType, csharpTypeName, () => GenerateBody(false), ConverterType.Concrete);
                 }
                 else if (complexType.Interfaces?.Count > 0)
                 {
@@ -455,7 +457,7 @@ using System.Text.RegularExpressions;
                     interfacesToImplement.Add("IGraphQlInputObject");
 
                 if (!isInterface)
-                    GenerateDataClass(context, csharpTypeName, complexType, String.Join(", ", interfacesToImplement), () => GenerateBody(false));
+                    GenerateDataClass(context, csharpTypeName, complexType, String.Join(", ", interfacesToImplement), () => GenerateBody(false), interfacesToImplement.Any() ? ConverterType.Concrete : ConverterType.None);
             }
 
             context.AfterDataClassesGeneration();
@@ -560,12 +562,19 @@ using System.Text.RegularExpressions;
         }
 
         private string GenerateInterface(GenerationContext context, string interfaceName, GraphQlType graphQlType, Action generateInterfaceBody) =>
-            GenerateFileMember(context, "interface", interfaceName, graphQlType, null, generateInterfaceBody);
+            GenerateFileMember(context, "interface", interfaceName, graphQlType, null, generateInterfaceBody, ConverterType.Abstract);
 
-        private string GenerateDataClass(GenerationContext context, string typeName, GraphQlType graphQlType, string baseTypeName, Action generateClassBody) =>
-            GenerateFileMember(context, "record", typeName, graphQlType, baseTypeName, generateClassBody);
+        private string GenerateDataClass(GenerationContext context, string typeName, GraphQlType graphQlType, string baseTypeName, Action generateClassBody, ConverterType converterType = ConverterType.None) =>
+            GenerateFileMember(context, "record", typeName, graphQlType, baseTypeName, generateClassBody, converterType);
 
-        private string GenerateFileMember(GenerationContext context, string memberType, string typeName, GraphQlType graphQlType, string baseTypeName, Action generateFileMemberBody)
+        enum ConverterType
+        {
+            None,
+            Abstract,
+            Concrete
+        }
+
+        private string GenerateFileMember(GenerationContext context, string memberType, string typeName, GraphQlType graphQlType, string baseTypeName, Action generateFileMemberBody, ConverterType converterType = ConverterType.None)
         {
             ValidateClassName(typeName);
 
@@ -576,6 +585,18 @@ using System.Text.RegularExpressions;
             GenerateCodeComments(writer, graphQlType.Description, context.Indentation);
 
             var indentation = GetIndentation(context.Indentation);
+
+            if (converterType == ConverterType.Abstract)
+            {
+                writer.Write(indentation);
+                writer.WriteLine(@$"[JsonConverter(typeof(AbstractConverter<{typeName}Implementation,{typeName}>))]");
+            }
+
+            if (converterType == ConverterType.Concrete)
+            {
+                writer.Write(indentation);
+                writer.WriteLine(@$"[JsonConverter(typeof(ConcreteConverter<{typeName}>))]");
+            }
 
             if (graphQlType.Interfaces?.Count > 0)
             {
