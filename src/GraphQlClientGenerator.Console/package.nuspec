@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>GraphQlClientGeneratorForTests.Beta</id>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
     <title>Generates GraphQL builder and client types</title>
     <authors>Jan Hučka, Alex Butenko</authors>
     <owners>Alex Butenko</owners>
